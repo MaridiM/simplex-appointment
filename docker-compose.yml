@@ -1,0 +1,71 @@
+version: '3.9'
+
+services:
+
+  # Сервис API
+  api-service:
+    build:
+      context: ./api-service
+    restart: always
+    ports:
+      - '8000:8000'
+    depends_on:
+      - appointments-service
+      - users-service
+    environment:
+      APPOINTMENTS_SERVICE_URL: http://appointments-service:8001
+      USERS_SERVICE_URL: http://users-service:8003
+
+  # Сервис Посещений
+  appointments-service:
+    build:
+      context: ./appointments-service
+    restart: always
+    ports:
+      - '8001:8001'
+    depends_on:
+      - mongodb
+      - users-service
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/simplex
+      USERS_SERVICE_URL: http://users-service:8003
+
+  # Сервис Посещений
+  notifications-service:
+    build:
+      context: ./notifications-service
+    restart: always
+    ports:
+      - '8002:8002'
+    depends_on:
+      - users-service
+    environment:
+      USERS_SERVICE_URL: http://users-service:8003
+
+      
+  # Сервис Пользователя
+  users-service:
+    build:
+      context: ./users-service
+    restart: always
+    ports:
+      - '8003:8003'
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/simplex
+  
+  # Сервис MongoDB
+  mongodb:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: simplex
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
